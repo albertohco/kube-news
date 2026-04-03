@@ -1,0 +1,27 @@
+# Copie este arquivo para terraform.tfvars e preencha com seus valores reais.
+# NUNCA commite terraform.tfvars no repositório (já está no .gitignore).
+
+# Endereço da API do Proxmox VE
+proxmox_endpoint = "https://192.168.1.100:8006/"
+
+# API token do Proxmox no formato: user@realm!token-name=token-value
+proxmox_api_token = "terraform-user@pve!terraform-token=SEU_TOKEN_AQUI"
+
+# Nome do nó Proxmox (visível na interface web, aba "Datacenter")
+proxmox_node = "pve"
+
+# Ignorar certificado TLS auto-assinado (padrão para labs)
+proxmox_insecure = true
+
+# Nome exato do template Ubuntu 22.04 cloud image criado no Proxmox
+vm_template = "ubuntu-22.04-cloud"
+
+# Recursos de cada VM (3 VMs × estes valores = total consumido)
+vm_cpu         = 2
+vm_memory      = 4096  # MB
+vm_disk_size   = 30    # GB
+vm_datastore   = "local-lvm"
+vm_network_bridge = "vmbr0"
+
+# Chave pública SSH para acesso às VMs (cole o conteúdo do seu arquivo .pub)
+vm_ssh_public_key = "ssh-ed25519 AAAA... seu_usuario@seu_host"

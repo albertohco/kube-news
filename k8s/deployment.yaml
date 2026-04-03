@@ -1,8 +1,30 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubenews
+---
+# Secret com credenciais do banco
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubenews-secret
+  namespace: kubenews
+type: Opaque
+stringData:
+  DB_DATABASE: kubenews
+  DB_USERNAME: kubenews
+  DB_PASSWORD: pg1234
+---
+# StatefulSet do PostgreSQL
 apiVersion: apps/v1
-kind: Deployment
-metadata: 
+kind: StatefulSet
+metadata:
   name: postgre
+  namespace: kubenews
 spec:
+  serviceName: postgre
+  replicas: 1
   selector:
     matchLabels:
       app: postgre
@@ -13,33 +35,74 @@ spec:
     spec:
       containers:
         - name: postgre
-          image: postgres:13.1
+          image: postgres:13.13
           ports:
             - containerPort: 5432
           env:
             - name: POSTGRES_PASSWORD
-              value: pg1234
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_PASSWORD
             - name: POSTGRES_USER
-              value: kubenews
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_USERNAME
             - name: POSTGRES_DB
-              value: kubenews
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_DATABASE
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "kubenews", "-d", "kubenews"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "kubenews", "-d", "kubenews"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: postgre-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgre-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
 ---
+# Service do PostgreSQL (ClusterIP - acesso apenas interno)
 apiVersion: v1
 kind: Service
 metadata:
   name: postgre
+  namespace: kubenews
 spec:
   selector:
     app: postgre
   ports:
     - port: 5432
 ---
+# Deployment da aplicação kube-news
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubenews
+  namespace: kubenews
 spec:
-  replicas: 10
+  replicas: 2
   selector:
     matchLabels:
       app: kubenews
@@ -49,28 +112,61 @@ spec:
         app: kubenews
     spec:
       containers:
-      - name: kubenews
-        image: fabricioveronez/kube-news:v2
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DB_DATABASE
-          value: kubenews
-        - name: DB_PASSWORD
-          value: pg1234
-        - name: DB_USERNAME
-          value: kubenews
-        - name: DB_HOST
-          value: postgre
+        - name: kubenews
+          image: kube-news-kubenews:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_DATABASE
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_PASSWORD
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kubenews-secret
+                  key: DB_USERNAME
+            - name: DB_HOST
+              value: postgre
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
 ---
+# Service da aplicação (NodePort para acesso local)
 apiVersion: v1
 kind: Service
 metadata:
   name: kubenews
+  namespace: kubenews
 spec:
   selector:
     app: kubenews
   ports:
-  - port: 80
-    targetPort: 8080
-  type: LoadBalancer
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort
+
