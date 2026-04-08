@@ -3,6 +3,27 @@ hostname: ${hostname}
 fqdn: ${hostname}.local
 manage_etc_hosts: true
 
+ssh_pwauth: true
+chpasswd:
+  list: |
+    ubuntu:${vm_password}
+  expire: false
+
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: false
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+# Desabilita systemd-resolved e configura DNS ANTES de tudo
+bootcmd:
+  - systemctl stop systemd-resolved
+  - systemctl disable systemd-resolved
+  - rm -f /etc/resolv.conf
+  - printf "nameserver ${dns_server_1}\nnameserver ${dns_server_2}\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+
 package_update: true
 package_upgrade: false
 
@@ -10,15 +31,20 @@ packages:
   - curl
   - open-iscsi
   - nfs-common
+  - qemu-guest-agent
+
+# Cria config do RKE2 sem problemas de indentação
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0600'
+    content: |
+      server: https://${node1_ip}:9345
+      token: ${rke2_token}
 
 runcmd:
-  # Configura o RKE2 para ingressar no cluster existente via node-1
-  - mkdir -p /etc/rancher/rke2
-  - |
-    cat > /etc/rancher/rke2/config.yaml <<'RKEEOF'
-    server: https://${node1_ip}:9345
-    token: ${rke2_token}
-    RKEEOF
+  - systemctl enable qemu-guest-agent
+  - systemctl start qemu-guest-agent
   # Aguarda o node-1 estar pronto (timeout 10 minutos)
   - |
     TIMEOUT=600

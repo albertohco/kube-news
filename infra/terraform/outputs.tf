@@ -20,3 +20,8 @@ output "node1_ip" {
   description = "IP do node-1 (control plane primário) — use para acesso SSH e kubectl"
   value       = local.node1_ip
 }
+
+output "vm_ips" {
+  description = "IPs estáticos das VMs"
+  value       = var.vm_ips
+}

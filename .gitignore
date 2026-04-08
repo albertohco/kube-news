@@ -112,3 +112,4 @@ infra/terraform/*.tfstate
 infra/terraform/*.tfstate.backup
 # infra/terraform/.terraform.lock.hcl  ← deve ser versionado (não ignorar)
 .apikey
+infra/terraform/terraform.tfstate.1775329715.backup

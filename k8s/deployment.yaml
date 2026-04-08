@@ -78,6 +78,7 @@ spec:
     - metadata:
         name: postgre-data
       spec:
+        storageClassName: local-path
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
@@ -111,10 +112,14 @@ spec:
       labels:
         app: kubenews
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:13.13
+          command: ['sh', '-c', 'until pg_isready -h postgre -p 5432 -U kubenews; do echo "Aguardando PostgreSQL..."; sleep 3; done']
       containers:
         - name: kubenews
-          image: kube-news-kubenews:latest
-          imagePullPolicy: Never
+          image: albertohco/kube-news:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:

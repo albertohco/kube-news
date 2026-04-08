@@ -57,6 +57,40 @@ variable "vm_network_bridge" {
   default     = "vmbr0"
 }
 
+variable "vm_gateway" {
+  description = "Gateway da rede das VMs"
+  type        = string
+}
+
+variable "vm_dns_servers" {
+  description = "Servidores DNS separados por espaço"
+  type        = string
+}
+
+variable "vm_ips" {
+  description = "Lista de IPs estáticos em CIDR para as 3 VMs (node1, node2, node3)"
+  type        = list(string)
+}
+
+variable "proxmox_ssh_username" {
+  description = "Usuário SSH para acesso ao Proxmox (normalmente root)"
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_private_key_file" {
+  description = "Caminho para a chave privada SSH usada para acessar o Proxmox"
+  type        = string
+  default     = "~/.ssh/id_rsa"
+}
+
+
+variable "vm_password" {
+  description = "Senha do usuário ubuntu nas VMs (para acesso via console)"
+  type        = string
+  sensitive   = true
+}
+
 variable "vm_ssh_public_key" {
   description = "Chave pública SSH para acesso às VMs (conteúdo do arquivo .pub)"
   type        = string
