@@ -28,7 +28,7 @@
 
 - [x] 5.1 Executar `terraform init` e verificar que o provider é baixado sem erros
 - [x] 5.2 Executar `terraform validate` e corrigir eventuais erros de sintaxe
-- [ ] 5.3 Executar `terraform plan` contra o Proxmox e revisar o plano antes do apply
-- [ ] 5.4 Executar `terraform apply` e aguardar criação das 3 VMs
-- [ ] 5.5 Aguardar cloud-init concluir (~5 min) e validar cluster com `kubectl get nodes` no node-1
+- [x] 5.3 Executar `terraform plan` contra o Proxmox e revisar o plano antes do apply
+- [x] 5.4 Executar `terraform apply` e aguardar criação das 3 VMs
+- [x] 5.5 Aguardar cloud-init concluir (~5 min) e validar cluster com `kubectl get nodes` no node-1
 - [x] 5.6 Atualizar `README.md` com seção `## Infraestrutura` documentando pré-requisitos e comandos Terraform
